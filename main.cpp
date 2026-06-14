@@ -2,6 +2,7 @@
 
 #include "camera.h"
 #include "voxel_map.h"
+#include <iostream>
 
 int main() {
   // hittable_list world;
@@ -44,7 +45,7 @@ int main() {
 
   // auto material3 = make_shared<metal>(color(0.7, 0.6, 0.5), 0.0);
   // world.add(make_shared<sphere>(point3(4, 1, 0), 1.0, material3));
-  voxel_map world(3);
+  voxel_map world(4);
   world.build();
 
   camera cam;
@@ -52,15 +53,20 @@ int main() {
   cam.aspect_ratio = 16.0 / 9.0;
   cam.image_width = 800;
   cam.samples_per_pixel = 4;
-  cam.max_depth = 5;
+  cam.max_depth = 2;
 
   cam.v_fov = 30;
-  cam.lookfrom = point3(128, 128, 128);
-  cam.lookat = point3(32, 32, 32);
+  cam.lookfrom = point3(512, 512, 512);
+  cam.lookat = point3(128, 128, 128);
   cam.v_up = vec3(0, 1, 0);
 
   // cam.defocus_angle = 0.6;
   // cam.focus_dist = 10.0;
 
+  auto render_start = std::chrono::system_clock::now();
   cam.render(world);
+  auto render_end = std::chrono::system_clock::now();
+  auto ms = std::chrono::duration_cast<std::chrono::milliseconds>(render_end -
+                                                                  render_start);
+  std::clog << "Render time: " << ms <<"\n";
 }

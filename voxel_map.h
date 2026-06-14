@@ -21,7 +21,7 @@ public:
   std::vector<uint8_t> leaf_data;
   raw_node root;
   int world_scale;
-  shared_ptr<material> mat = make_shared<lambertian>(color(0.4, 0.7, 0.4));
+  shared_ptr<material> mat = make_shared<dielectric>(1.5);
 
   voxel_map(int depth) : world_scale(1) {
     for (int i = 0; i < depth; i++) {
@@ -84,9 +84,13 @@ private:
           int bit = child_index(k, j, i);
           if (!(node.pop_mask & (1ULL << bit)))
             continue;
-          int rank = __builtin_popcountll(node.pop_mask & ((1ULL << bit) - 1));
-          const raw_node &child = node_pool[child_ptr + rank];
           vec3 child_pos = pos + vec3(k, j, i) * child_scale;
+          raw_node child = {};
+          if (child_scale != 1) {
+            int rank =
+                __builtin_popcountll(node.pop_mask & ((1ULL << bit) - 1));
+            child = node_pool[child_ptr + rank];
+          }
           if (hit_node(child, r, interval(ray_t.min, hit ? rec.t : ray_t.max),
                        child_pos, child_scale, rec)) {
             hit = true;
