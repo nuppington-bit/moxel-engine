@@ -20,21 +20,27 @@ raw_node generate_tree(std::vector<raw_node> &node_pool,
                        vec3 pos) {
   raw_node node;
   int child_scale = scale / 4;
-  vec3 center = vec3(128, 128, 128);
+  vec3 center = vec3(32, 32, 32);
 
+  int is_leaf = 1;
+  int is_full = 2;
   if (child_scale == 1) {
     for (int i = 0; i < 4; i++) {
       for (int j = 0; j < 4; j++) {
         for (int k = 0; k < 4; k++) {
           vec3 child_pos = pos + vec3(k, j, i) * child_scale;
-          uint8_t mat = (child_pos - center).length() < 96 ? 1 : 0;
+          uint8_t mat = (child_pos - center).length() < 24 ? 1 : 0;
           if (mat != 0) {
+            is_leaf = 0;
             node.pop_mask |= (1ULL << child_index(k, j, i));
             leaf_data.push_back(mat);
+          } else {
+            is_full = 0;
           }
         }
       }
     }
+    node.is_leaf = is_leaf ? is_leaf : is_full;
     return node;
   }
   raw_node children[64];
@@ -59,12 +65,16 @@ raw_node generate_tree(std::vector<raw_node> &node_pool,
   }
 
   if (num_children > 0) {
+    is_leaf = 0;
     node.child_ptr = (uint32_t)node_pool.size();
     for (int bit = 0; bit < 64; bit++) {
       if (has_child[bit])
         node_pool.push_back(children[bit]);
     }
+  } else {
+    is_full = 0;
   }
+  node.is_leaf = is_leaf ? is_leaf : is_full;
   return node;
 }
 

@@ -2,6 +2,7 @@
 #define VEC3_H
 
 #include <cmath>
+#include <cstdlib>
 #include <functional>
 #include <ostream>
 
@@ -9,6 +10,7 @@ class vec3 {
 public:
   double e[3];
   vec3() : e{0, 0, 0} {}
+  vec3(double t) : e{t, t, t} {}
   vec3(double e0, double e1, double e2) : e{e0, e1, e2} {}
 
   double x() const { return e[0]; }
@@ -23,6 +25,13 @@ public:
     e[0] += v.e[0];
     e[1] += v.e[1];
     e[2] += v.e[2];
+    return *this;
+  }
+
+  vec3 &operator+=(double t) {
+    e[0] += t;
+    e[1] += t;
+    e[2] += t;
     return *this;
   }
 
@@ -144,6 +153,22 @@ inline vec3 max(const vec3 &v, const vec3 &n) {
 
 inline vec3 floor(const vec3 &v) {
     return vec3(std::floor(v.x()), std::floor(v.y()), std::floor(v.z()));
+}
+
+inline vec3 abs(const vec3 &v) {
+    return vec3(std::abs(v.x()), std::abs(v.y()), std::abs(v.z()));
+}
+
+inline vec3 clamp(vec3 &v, const vec3 &vmin, const vec3 &vmax) {
+    for(int i = 0; i < 3; i++) {
+        if (v[i] < vmin[i]) {
+            v[i] = vmin[i];
+        } else if (v[i] > vmax[i]) {
+            v[i] = vmax[i];
+        }
+    }
+
+    return v;
 }
 
 #endif
