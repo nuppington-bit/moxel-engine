@@ -3,8 +3,9 @@
 
 #include "camera.h"
 #include "vec3.h"
-#include <cassert>
 #include <cstdint>
+#include <iostream>
+#include <random>
 #include <vector>
 
 struct [[gnu::packed]] raw_node {
@@ -12,6 +13,12 @@ struct [[gnu::packed]] raw_node {
   uint32_t child_ptr : 31 = 0;
   uint64_t pop_mask = 0;
 };
+
+inline int random_material() {
+  static std::mt19937 gen(std::random_device{}());
+  static std::uniform_int_distribution<int> dist(0, 2);
+  return dist(gen);
+}
 
 int child_index(int x, int y, int z) { return z * 16 + y * 4 + x; }
 
@@ -22,25 +29,21 @@ raw_node generate_tree(std::vector<raw_node> &node_pool,
   int child_scale = scale / 4;
   vec3 center = vec3(32, 32, 32);
 
-  int is_leaf = 1;
-  int is_full = 2;
   if (child_scale == 1) {
+    node.child_ptr = (uint32_t)leaf_data.size();
     for (int i = 0; i < 4; i++) {
       for (int j = 0; j < 4; j++) {
         for (int k = 0; k < 4; k++) {
           vec3 child_pos = pos + vec3(k, j, i) * child_scale;
           uint8_t mat = (child_pos - center).length() < 24 ? 1 : 0;
           if (mat != 0) {
-            is_leaf = 0;
             node.pop_mask |= (1ULL << child_index(k, j, i));
-            leaf_data.push_back(mat);
-          } else {
-            is_full = 0;
+            leaf_data.push_back(random_material());
           }
         }
       }
     }
-    node.is_leaf = is_leaf ? is_leaf : is_full;
+    node.is_leaf = node.pop_mask == 0 ? 1 : 0;
     return node;
   }
   raw_node children[64];
@@ -65,16 +68,13 @@ raw_node generate_tree(std::vector<raw_node> &node_pool,
   }
 
   if (num_children > 0) {
-    is_leaf = 0;
     node.child_ptr = (uint32_t)node_pool.size();
     for (int bit = 0; bit < 64; bit++) {
       if (has_child[bit])
         node_pool.push_back(children[bit]);
     }
-  } else {
-    is_full = 0;
   }
-  node.is_leaf = is_leaf ? is_leaf : is_full;
+  node.is_leaf = node.pop_mask == 0 ? 1 : 0;
   return node;
 }
 

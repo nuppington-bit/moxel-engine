@@ -8,14 +8,6 @@
 #include "ray.h"
 #include "tree.h"
 #include "vec3.h"
-#include <algorithm>
-#include <cstddef>
-#include <cstdio>
-#include <cstdlib>
-#include <ctime>
-#include <iostream>
-#include <utility>
-#include <vector>
 
 class voxel_map : public hittable {
 public:
@@ -23,7 +15,10 @@ public:
   std::vector<uint8_t> leaf_data;
   raw_node root;
   int world_scale;
-  shared_ptr<material> mat = make_shared<lambertian>(color(0.4, 0.7, 0.4));
+  std::vector<std::shared_ptr<material>> mat = {
+      make_shared<lambertian>(color(0.4, 0.7, 0.4)),
+      make_shared<metal>(color(0.4, 0.7, 0.4), 0.1),
+      make_shared<dielectric>(1.45)};
 
   voxel_map(int depth) : world_scale(1) {
     for (int i = 0; i < depth; i++) {
@@ -45,8 +40,7 @@ private:
     vec3 inv_d = 1.0 / r.direction();
     interval t =
         intersectAABB(r.origin(), inv_d, pos, pos + vec3(scale, scale, scale));
-    if (t.max <= t.min || t.max <= ray_t.min || t.min >= ray_t.max ||
-        node.is_leaf == 1)
+    if (node.is_leaf == 1)
       return false;
 
     if (scale == 1 || node.is_leaf == 2) {
@@ -73,7 +67,7 @@ private:
       }
 
       rec.set_face_normal(r, outward_normal);
-      rec.mat = mat;
+      rec.mat = mat[1];
       return true;
     }
 

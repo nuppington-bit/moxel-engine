@@ -30,26 +30,14 @@ public:
       std::clog << "\rScanlines remaining: " << (image_height - i) << ' '
                 << std::flush;
       for (int j = 0; j < image_width; j++) {
-        auto b4_time = std::chrono::system_clock::now();
         color pixel_color = color(0, 0, 0);
 
-        auto ray_start = std::chrono::system_clock::now();
         for (int sample = 0; sample < samples_per_pixel; sample++) {
           ray r = get_ray(j, i);
           pixel_color += ray_color(r, max_depth, world);
         }
-        auto ray_end = std::chrono::system_clock::now();
 
         write_color(std::cout, pixel_samples_scale * pixel_color);
-        auto after_time = std::chrono::system_clock::now();
-        auto ms = std::chrono::duration_cast<std::chrono::milliseconds>(
-            after_time - b4_time);
-        if (ms.count() > 1) {
-          // std::clog << "Pixel time: " << ms << ", ray time: "
-          //           << std::chrono::duration_cast<std::chrono::milliseconds>(
-          //                  ray_end - ray_start)
-          //           << "\n";
-        }
       }
     }
     std::clog << "\rDone.                 \n";
@@ -100,19 +88,12 @@ private:
   }
 
   ray get_ray(int x, int y) {
-    auto ray_start = std::chrono::system_clock::now();
     auto offset = sample_square();
     auto pixel_sample = pixel00_loc + ((x + offset.x()) * pixel_delta_u) +
                         ((y + offset.y()) * pixel_delta_v);
     auto ray_origin = (defocus_angle <= 0) ? center : defocus_disk_sample();
     auto ray_direction = pixel_sample - ray_origin;
 
-    auto ray_end = std::chrono::system_clock::now();
-    auto ms = std::chrono::duration_cast<std::chrono::milliseconds>(ray_end -
-                                                                    ray_start);
-    if (ms.count() > 1) {
-      std::clog << "Get_ray time: " << ms << "\n";
-    }
     return ray(ray_origin, ray_direction);
   }
 
@@ -131,7 +112,6 @@ private:
 
     hit_record rec;
 
-    auto color_start = std::chrono::system_clock::now();
     if (world.hit(r, interval(0.001, infinity), rec)) {
       ray scattered;
       color attenuation;
@@ -139,12 +119,7 @@ private:
         return attenuation * ray_color(scattered, depth - 1, world);
       return color(0, 0, 0);
     }
-    auto color_end = std::chrono::system_clock::now();
-    auto ms = std::chrono::duration_cast<std::chrono::milliseconds>(color_end -
-                                                                    color_start);
-    if (ms.count() > 1) {
-      std::clog << "Color time: " << ms << "\n";
-    }
+
     vec3 unit_direction = unit_vector(r.direction());
     auto a = 0.5 * (unit_direction.y() + 1.0);
     return (1.0 - a) * color(1.0, 1.0, 1.0) + a * color(0.5, 0.7, 1.0);
